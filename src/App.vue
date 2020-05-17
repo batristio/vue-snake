@@ -8,8 +8,6 @@
     </div>
 
     <p>{{ position }}</p>
-
-    <p>{{ direction }}</p>
   </div>
 </template>
 
@@ -20,17 +18,24 @@ import {
   getFilledArrayWithZeros
 } from './utils/index'
 
+enum Direction {
+  LEFT,
+  RIGHT,
+  TOP,
+  BOTTOM
+}
+
 export default Vue.extend({
   data () {
     return {
       matrix: [],
       direction: '',
-      position: ''
+      position: '',
+      snakeBody: [{}]
     }
   },
 
   methods: {
-    /* Generate the terrain that is a (Size x Size) matrix */
     generateMatrix (size: number): void {
       if (size < 20) throw new Error('Size should be at least 20 x 20.')
       if (size % 2 !== 0) throw new Error('Size should be an even number')
@@ -40,9 +45,9 @@ export default Vue.extend({
       }
 
       this.generateInitialSnakePosition(size)
+      this.$data.matrix.reverse()
     },
 
-    /* Generate initial snake position and direction */
     generateInitialSnakePosition (size: number): void {
       const x = randomBetweenMinMax(2, size - 2)
       const y = randomBetweenMinMax(2, size - 2)
@@ -50,32 +55,37 @@ export default Vue.extend({
       this.$data.matrix[y][x] = 1
 
       this.$data.direction = this.calculateDirection(x, y, size)
+
+      switch (this.$data.direction) {
+        case Direction.LEFT:
+          this.$data.matrix[y][x + 1] = 1
+          this.$data.matrix[y][x + 2] = 1
+          break
+        case Direction.RIGHT:
+          this.$data.matrix[y][x - 1] = 1
+          this.$data.matrix[y][x - 2] = 1
+          break
+        case Direction.TOP:
+          this.$data.matrix[y + 1][x] = 1
+          this.$data.matrix[y + 2][x] = 1
+          break
+        case Direction.BOTTOM:
+          this.$data.matrix[y - 1][x] = 1
+          this.$data.matrix[y - 2][x] = 1
+          break
+      }
     },
 
-    /* Based on x, y, and the length of any axis, return up, down, left or right */
-    calculateDirection (x: number, y: number, length: number): string {
+    calculateDirection (x: number, y: number, length: number): Direction {
       const middleOfTheAxis = length / 2
 
-      /* Length is counted from 1 not from 0, so add one to the index */
       const xDirectionChance = length - x + 1
       const yDirectionChance = length - y + 1
-      let xDirection = ''
-      let yDirection = ''
-      let direction = ''
 
-      xDirectionChance >= middleOfTheAxis
-        ? xDirection = 'right'
-        : xDirection = 'left'
+      const xDirection = xDirectionChance >= middleOfTheAxis ? Direction.RIGHT : Direction.LEFT
+      const yDirection = yDirectionChance >= middleOfTheAxis ? Direction.TOP : Direction.BOTTOM
 
-      yDirectionChance >= middleOfTheAxis
-        ? yDirection = 'top'
-        : yDirection = 'bottom'
-
-      xDirectionChance > yDirectionChance
-        ? direction = xDirection
-        : direction = yDirection
-
-      return direction
+      return xDirectionChance > yDirectionChance ? xDirection : yDirection
     }
   },
 
