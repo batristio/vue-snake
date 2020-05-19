@@ -34,10 +34,10 @@ import {
 } from './utils/index'
 
 enum Direction {
-  LEFT = 'left',
-  RIGHT = 'right',
-  UP = 'up',
-  DOWN = 'down'
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN
 }
 
 type Coordinates = {
@@ -60,8 +60,7 @@ export default Vue.extend({
       snakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
-      direction: null,
-      Direction
+      direction: null
     }
   },
 
@@ -163,10 +162,10 @@ export default Vue.extend({
     },
 
     checkForDirectionChange (event: KeyboardEvent): void {
-      if (event.keyCode === 37) this.changeDirection(Direction.LEFT)
-      if (event.keyCode === 38) this.changeDirection(Direction.UP)
-      if (event.keyCode === 39) this.changeDirection(Direction.RIGHT)
-      if (event.keyCode === 40) this.changeDirection(Direction.DOWN)
+      if (event.keyCode === 37 && this.direction !== Direction.RIGHT) this.changeDirection(Direction.LEFT)
+      if (event.keyCode === 38 && this.direction !== Direction.DOWN) this.changeDirection(Direction.UP)
+      if (event.keyCode === 39 && this.direction !== Direction.LEFT) this.changeDirection(Direction.RIGHT)
+      if (event.keyCode === 40 && this.direction !== Direction.UP) this.changeDirection(Direction.DOWN)
     },
 
     changeDirection (newDirection: Direction): void {
@@ -179,14 +178,14 @@ export default Vue.extend({
     setInterval(() => {
       this.updateSnakeCoordinates()
     }, 300)
+  },
+
+  beforeMount () {
+    this.generateMatrix(30)
 
     window.addEventListener('keydown', (event) => {
       this.checkForDirectionChange(event)
     })
-  },
-
-  beforeMount () {
-    this.generateMatrix(20)
   }
 })
 </script>
