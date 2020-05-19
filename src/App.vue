@@ -1,13 +1,17 @@
 <template>
   <div id="app">
     <div
-      v-for="(entry, index) in matrix"
+      v-for="(row, index) in matrix"
       :key="index"
     >
-      <span>{{ entry }}</span>
+      <span>{{ row }}</span>
     </div>
 
-    <p>{{ position }}</p>
+    <div style="margin-top: 20px;">
+      <button @click="updateSnakeCoordinates">
+        Next iteration
+      </button>
+    </div>
   </div>
 </template>
 
@@ -19,19 +23,33 @@ import {
 } from './utils/index'
 
 enum Direction {
-  LEFT,
-  RIGHT,
-  TOP,
-  BOTTOM
+  LEFT = 'left',
+  RIGHT = 'right',
+  UP = 'up',
+  DOWN = 'down'
+}
+
+type Coordinates = {
+  x: number;
+  y: number;
+}
+
+type GameState = {
+  matrix: number[][];
+  snakeBodyCoordinates: Coordinates[];
+  snakeTailTipCoordinates: Coordinates | null;
+  snakeBodyLength: number;
+  direction: Direction | null;
 }
 
 export default Vue.extend({
-  data () {
+  data (): GameState {
     return {
       matrix: [],
-      direction: '',
-      position: '',
-      snakeBody: [{}]
+      snakeBodyCoordinates: [],
+      snakeTailTipCoordinates: null,
+      snakeBodyLength: 0,
+      direction: null
     }
   },
 
@@ -41,52 +59,91 @@ export default Vue.extend({
       if (size % 2 !== 0) throw new Error('Size should be an even number')
 
       for (let i = 0; i < size; i++) {
-        this.$data.matrix[i] = getFilledArrayWithZeros(size)
+        this.matrix[i] = getFilledArrayWithZeros(size)
       }
 
       this.generateInitialSnakePosition(size)
-      this.$data.matrix.reverse()
+      this.matrix.reverse()
+      this.updateMatrix()
     },
 
     generateInitialSnakePosition (size: number): void {
       const x = randomBetweenMinMax(2, size - 2)
       const y = randomBetweenMinMax(2, size - 2)
-      this.$data.position = `${x}:${y}`
-      this.$data.matrix[y][x] = 1
+      this.addToSnakeBody(x, y)
 
-      this.$data.direction = this.calculateDirection(x, y, size)
+      this.direction = this.calculateInitialDirection(x, y, size)
 
-      switch (this.$data.direction) {
+      switch (this.direction) {
         case Direction.LEFT:
-          this.$data.matrix[y][x + 1] = 1
-          this.$data.matrix[y][x + 2] = 1
+          this.addToSnakeBody(x + 1, y)
+          this.addToSnakeBody(x + 2, y)
           break
         case Direction.RIGHT:
-          this.$data.matrix[y][x - 1] = 1
-          this.$data.matrix[y][x - 2] = 1
+          this.addToSnakeBody(x - 1, y)
+          this.addToSnakeBody(x - 2, y)
           break
-        case Direction.TOP:
-          this.$data.matrix[y + 1][x] = 1
-          this.$data.matrix[y + 2][x] = 1
+        case Direction.UP:
+          this.addToSnakeBody(x, y + 1)
+          this.addToSnakeBody(x, y + 2)
           break
-        case Direction.BOTTOM:
-          this.$data.matrix[y - 1][x] = 1
-          this.$data.matrix[y - 2][x] = 1
+        case Direction.DOWN:
+          this.addToSnakeBody(x, y - 1)
+          this.addToSnakeBody(x, y - 2)
           break
       }
     },
 
-    calculateDirection (x: number, y: number, length: number): Direction {
+    calculateInitialDirection (x: number, y: number, length: number): Direction {
       const middleOfTheAxis = length / 2
 
       const xDirectionChance = length - x + 1
       const yDirectionChance = length - y + 1
 
       const xDirection = xDirectionChance >= middleOfTheAxis ? Direction.RIGHT : Direction.LEFT
-      const yDirection = yDirectionChance >= middleOfTheAxis ? Direction.TOP : Direction.BOTTOM
+      const yDirection = yDirectionChance >= middleOfTheAxis ? Direction.UP : Direction.DOWN
 
       return xDirectionChance > yDirectionChance ? xDirection : yDirection
+    },
+
+    updateMatrix (): void {
+      this.matrix = this.matrix.slice()
+      this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
+        Vue.set(this.matrix[y], x, 1)
+      })
+      if (this.snakeTailTipCoordinates !== null) {
+        const lastBodyIndexCoordinateX = this.snakeTailTipCoordinates.x
+        const lastBodyIndexCoordinateY = this.snakeTailTipCoordinates.y
+        Vue.set(this.matrix[lastBodyIndexCoordinateY], lastBodyIndexCoordinateX, 0)
+      }
+    },
+
+    addToSnakeBody (x: number, y: number): void {
+      this.snakeBodyCoordinates.push({ x, y })
+    },
+
+    updateSnakeCoordinates (): void {
+      const head: Coordinates = this.generateNewHeadCoordinate(
+        this.snakeBodyCoordinates[0]
+      )
+      this.snakeBodyCoordinates.unshift(head)
+      this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
+      this.updateMatrix()
+    },
+
+    generateNewHeadCoordinate ({ x, y }: Coordinates): Coordinates {
+      switch (this.direction) {
+        case Direction.LEFT:
+          return { x: x - 1, y: y }
+        case Direction.RIGHT:
+          return { x: x + 1, y: y }
+        case Direction.UP:
+          return { x: x, y: y + 1 }
+        case Direction.DOWN:
+          return { x: x, y: y - 1 }
+      }
     }
+
   },
 
   beforeMount () {
