@@ -4,7 +4,7 @@
       v-for="(row, index) in matrix"
       :key="index"
     >
-      <span>{{ row }}</span>
+      <span>{{ row }}</span> {{ index }}
     </div>
 
     <div style="margin-top: 20px;">
@@ -63,7 +63,6 @@ export default Vue.extend({
       }
 
       this.generateInitialSnakePosition(size)
-      this.matrix.reverse()
       this.updateMatrix()
     },
 
@@ -101,31 +100,32 @@ export default Vue.extend({
       const yDirectionChance = length - y + 1
 
       const xDirection = xDirectionChance >= middleOfTheAxis ? Direction.RIGHT : Direction.LEFT
-      const yDirection = yDirectionChance >= middleOfTheAxis ? Direction.UP : Direction.DOWN
+      const yDirection = yDirectionChance >= middleOfTheAxis ? Direction.DOWN : Direction.UP
 
       return xDirectionChance > yDirectionChance ? xDirection : yDirection
     },
 
     updateMatrix (): void {
-      this.matrix = this.matrix.slice()
-      this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
-        Vue.set(this.matrix[y], x, 1)
-      })
       if (this.snakeTailTipCoordinates !== null) {
         const lastBodyIndexCoordinateX = this.snakeTailTipCoordinates.x
         const lastBodyIndexCoordinateY = this.snakeTailTipCoordinates.y
-        Vue.set(this.matrix[lastBodyIndexCoordinateY], lastBodyIndexCoordinateX, 0)
+        this.matrix[lastBodyIndexCoordinateY][lastBodyIndexCoordinateX] = 0
       }
+
+      this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
+        this.matrix[y][x] = 1
+      })
+
+      this.matrix = this.matrix.slice()
     },
 
     addToSnakeBody (x: number, y: number): void {
       this.snakeBodyCoordinates.push({ x, y })
+      this.snakeBodyLength++
     },
 
     updateSnakeCoordinates (): void {
-      const head: Coordinates = this.generateNewHeadCoordinate(
-        this.snakeBodyCoordinates[0]
-      )
+      const head: Coordinates = this.generateNewHeadCoordinate(this.snakeBodyCoordinates[0])
       this.snakeBodyCoordinates.unshift(head)
       this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       this.updateMatrix()
@@ -138,9 +138,9 @@ export default Vue.extend({
         case Direction.RIGHT:
           return { x: x + 1, y: y }
         case Direction.UP:
-          return { x: x, y: y + 1 }
-        case Direction.DOWN:
           return { x: x, y: y - 1 }
+        case Direction.DOWN:
+          return { x: x, y: y + 1 }
       }
     }
 
