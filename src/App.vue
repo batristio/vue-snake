@@ -1,16 +1,27 @@
 <template>
-  <div id="app">
+  <div
+    id="app"
+    class="center"
+  >
     <div
-      v-for="(row, index) in matrix"
-      :key="index"
+      v-for="(row, i) in matrix"
+      :key="i"
     >
-      <span>{{ row }}</span> {{ index }}
-    </div>
-
-    <div style="margin-top: 20px;">
-      <button @click="updateSnakeCoordinates">
-        Next iteration
-      </button>
+      <span
+        v-for="(element, j) in row"
+        :key="j"
+      >
+        <span
+          v-if="element === '&squf;'"
+          v-html="element"
+          class="matrix-entry-size scaled-snake-body-piece"
+        />
+        <span
+          v-else
+          v-html="element"
+          class="matrix-entry-size"
+        />
+      </span>
     </div>
   </div>
 </template>
@@ -35,7 +46,7 @@ type Coordinates = {
 }
 
 type GameState = {
-  matrix: number[][];
+  matrix: string[][];
   snakeBodyCoordinates: Coordinates[];
   snakeTailTipCoordinates: Coordinates | null;
   snakeBodyLength: number;
@@ -49,7 +60,8 @@ export default Vue.extend({
       snakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
-      direction: null
+      direction: null,
+      Direction
     }
   },
 
@@ -109,11 +121,11 @@ export default Vue.extend({
       if (this.snakeTailTipCoordinates !== null) {
         const lastBodyIndexCoordinateX = this.snakeTailTipCoordinates.x
         const lastBodyIndexCoordinateY = this.snakeTailTipCoordinates.y
-        this.matrix[lastBodyIndexCoordinateY][lastBodyIndexCoordinateX] = 0
+        this.matrix[lastBodyIndexCoordinateY][lastBodyIndexCoordinateX] = '&nbsp;&blk14;&blk14;&nbsp;'
       }
 
       this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
-        this.matrix[y][x] = 1
+        this.matrix[y][x] = '&squf;'
       })
 
       this.matrix = this.matrix.slice()
@@ -134,16 +146,43 @@ export default Vue.extend({
     generateNewHeadCoordinate ({ x, y }: Coordinates): Coordinates {
       switch (this.direction) {
         case Direction.LEFT:
-          return { x: x - 1, y: y }
+          return { x: this.checkSnakeWrap(x - 1), y: y }
         case Direction.RIGHT:
-          return { x: x + 1, y: y }
+          return { x: this.checkSnakeWrap(x + 1), y: y }
         case Direction.UP:
-          return { x: x, y: y - 1 }
+          return { x: x, y: this.checkSnakeWrap(y - 1) }
         case Direction.DOWN:
-          return { x: x, y: y + 1 }
+          return { x: x, y: this.checkSnakeWrap(y + 1) }
       }
+    },
+
+    checkSnakeWrap (headIndex: number): number {
+      if (headIndex > this.matrix.length - 1) return 0
+      if (headIndex < 0) return this.matrix.length - 1
+      return headIndex
+    },
+
+    checkForDirectionChange (event: KeyboardEvent): void {
+      if (event.keyCode === 37) this.changeDirection(Direction.LEFT)
+      if (event.keyCode === 38) this.changeDirection(Direction.UP)
+      if (event.keyCode === 39) this.changeDirection(Direction.RIGHT)
+      if (event.keyCode === 40) this.changeDirection(Direction.DOWN)
+    },
+
+    changeDirection (newDirection: Direction): void {
+      this.direction = newDirection
     }
 
+  },
+
+  mounted () {
+    setInterval(() => {
+      this.updateSnakeCoordinates()
+    }, 300)
+
+    window.addEventListener('keydown', (event) => {
+      this.checkForDirectionChange(event)
+    })
   },
 
   beforeMount () {
@@ -151,3 +190,20 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style>
+  .matrix-entry-size {
+    display: inline-block;
+    height:30.67px;
+    width:30.67px;
+    transform: scale(1,1.2)
+  }
+
+  .scaled-snake-body-piece {
+    transform: scale(5.5) translate(0.1px, 5px);
+  }
+
+  .center {
+    text-align: center;
+  }
+</style>
