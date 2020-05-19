@@ -30,7 +30,7 @@
 import { Vue } from 'vue-property-decorator'
 import {
   randomBetweenMinMax,
-  getFilledArrayWithZeros
+  getFilledArrayWithSymbols
 } from './utils/index'
 
 enum Direction {
@@ -70,7 +70,7 @@ export default Vue.extend({
       if (size % 2 !== 0) throw new Error('Size should be an even number')
 
       for (let i = 0; i < size; i++) {
-        this.matrix[i] = getFilledArrayWithZeros(size)
+        this.matrix[i] = getFilledArrayWithSymbols(size)
       }
 
       this.generateInitialSnakePosition(size)
@@ -136,13 +136,13 @@ export default Vue.extend({
     },
 
     updateSnakeCoordinates (): void {
-      const head: Coordinates = this.generateNewHeadCoordinate(this.snakeBodyCoordinates[0])
+      const head: Coordinates = this.generateNewHeadCoordinates(this.snakeBodyCoordinates[0])
       this.snakeBodyCoordinates.unshift(head)
       this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       this.updateMatrix()
     },
 
-    generateNewHeadCoordinate ({ x, y }: Coordinates): Coordinates {
+    generateNewHeadCoordinates ({ x, y }: Coordinates): Coordinates {
       switch (this.direction) {
         case Direction.LEFT:
           return { x: this.checkSnakeWrap(x - 1), y: y }
@@ -191,6 +191,10 @@ export default Vue.extend({
 </script>
 
 <style>
+  .center {
+    text-align: center;
+  }
+
   .matrix-entry-size {
     display: inline-block;
     height:30.67px;
@@ -198,11 +202,12 @@ export default Vue.extend({
     transform: scale(1,1.2)
   }
 
+  .scaled-food,
   .scaled-snake-body-piece {
     transform: scale(5.5) translate(0.1px, 5px);
   }
 
-  .center {
-    text-align: center;
+  .scaled-food {
+    color: #ff0000;
   }
 </style>
