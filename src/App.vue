@@ -17,6 +17,11 @@
           class="matrix-entry-size scaled-snake-body-piece"
         />
         <span
+          v-else-if="element === '&#9641;'"
+          v-html="element"
+          class="matrix-entry-size scaled-food"
+        />
+        <span
           v-else
           v-html="element"
           class="matrix-entry-size"
@@ -30,7 +35,8 @@
 import { Vue } from 'vue-property-decorator'
 import {
   randomBetweenMinMax,
-  getFilledArrayWithSymbols
+  getFilledArrayWithSymbols,
+  randomBetweenMinMaxExcept
 } from './utils/index'
 
 enum Direction {
@@ -51,6 +57,9 @@ type GameState = {
   snakeTailTipCoordinates: Coordinates | null;
   snakeBodyLength: number;
   direction: Direction | null;
+  appleCoordinates: Coordinates | null;
+  isAppleEaten: boolean;
+  applesEatenCounter: number;
 }
 
 export default Vue.extend({
@@ -60,7 +69,10 @@ export default Vue.extend({
       snakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
-      direction: null
+      direction: null,
+      appleCoordinates: null,
+      isAppleEaten: false,
+      applesEatenCounter: 0
     }
   },
 
@@ -74,6 +86,7 @@ export default Vue.extend({
       }
 
       this.generateInitialSnakePosition(size)
+      this.generateRandomApplePoint()
       this.updateMatrix()
     },
 
@@ -127,6 +140,14 @@ export default Vue.extend({
         this.matrix[y][x] = '&squf;'
       })
 
+      if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
+        this.generateRandomApplePoint()
+        this.matrix[this.appleCoordinates.y][this.appleCoordinates.x] = '&#9641;'
+        // ToDo: create counter for how many apple have been eaten
+        this.applesEatenCounter++
+        this.isAppleEaten = false
+      }
+
       this.matrix = this.matrix.slice()
     },
 
@@ -138,6 +159,11 @@ export default Vue.extend({
     updateSnakeCoordinates (): void {
       const head: Coordinates = this.generateNewHeadCoordinates(this.snakeBodyCoordinates[0])
       this.snakeBodyCoordinates.unshift(head)
+      if (head.x === this.appleCoordinates.x && head.y === this.appleCoordinates.y) {
+        this.snakeBodyCoordinates.unshift(this.appleCoordinates)
+        this.isAppleEaten = true
+        this.snakeBodyLength++
+      }
       this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       this.updateMatrix()
     },
@@ -170,14 +196,28 @@ export default Vue.extend({
 
     changeDirection (newDirection: Direction): void {
       this.direction = newDirection
-    }
+    },
 
+    generateRandomApplePoint (): void {
+      const snakeXCoordinates: number[] = []
+      const snakeYCoordinates: number[] = []
+
+      this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
+        snakeXCoordinates.push(x)
+        snakeYCoordinates.push(y)
+      })
+
+      this.appleCoordinates = {
+        x: randomBetweenMinMaxExcept(0, this.matrix.length - 1, snakeXCoordinates),
+        y: randomBetweenMinMaxExcept(0, this.matrix.length - 1, snakeYCoordinates)
+      }
+    }
   },
 
   mounted () {
     setInterval(() => {
       this.updateSnakeCoordinates()
-    }, 300)
+    }, 100)
   },
 
   beforeMount () {
@@ -202,12 +242,12 @@ export default Vue.extend({
     transform: scale(1,1.2)
   }
 
-  .scaled-food,
   .scaled-snake-body-piece {
     transform: scale(5.5) translate(0.1px, 5px);
   }
 
   .scaled-food {
     color: #ff0000;
+    transform: scale(1.7) translate(0.2px, 1.5px);
   }
 </style>
