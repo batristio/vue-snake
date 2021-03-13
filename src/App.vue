@@ -36,7 +36,8 @@ import { Vue } from 'vue-property-decorator'
 import {
   randomBetweenMinMax,
   getFilledArrayWithSymbols,
-  randomBetweenMinMaxExcept
+  fillLabelledMatrix,
+  randomApplePointFromMatrix
 } from './utils/index'
 
 enum Direction {
@@ -52,7 +53,9 @@ type Coordinates = {
 }
 
 type GameState = {
+  MATRIX_LENGTH: number;
   matrix: string[][];
+  labeledMatrix: {}[][];
   snakeBodyCoordinates: Coordinates[];
   snakeTailTipCoordinates: Coordinates | null;
   snakeBodyLength: number;
@@ -65,7 +68,9 @@ type GameState = {
 export default Vue.extend({
   data (): GameState {
     return {
+      MATRIX_LENGTH: 30,
       matrix: [],
+      labeledMatrix: [],
       snakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
@@ -143,7 +148,7 @@ export default Vue.extend({
       if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
         this.generateRandomApplePoint()
         this.matrix[this.appleCoordinates.y][this.appleCoordinates.x] = '&#9641;'
-        // ToDo: create counter for how many apple have been eaten
+        // ToDo: create counter for how many apples have been eaten
         this.applesEatenCounter++
         this.isAppleEaten = false
       }
@@ -199,18 +204,14 @@ export default Vue.extend({
     },
 
     generateRandomApplePoint (): void {
-      const snakeXCoordinates: number[] = []
-      const snakeYCoordinates: number[] = []
+      const copyOfSnakeBodyCoordinates: Coordinates[] = this.snakeBodyCoordinates
 
-      this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
-        snakeXCoordinates.push(x)
-        snakeYCoordinates.push(y)
-      })
-
-      this.appleCoordinates = {
-        x: randomBetweenMinMaxExcept(0, this.matrix.length - 1, snakeXCoordinates),
-        y: randomBetweenMinMaxExcept(0, this.matrix.length - 1, snakeYCoordinates)
+      if (this.snakeTailTipCoordinates !== null) {
+        copyOfSnakeBodyCoordinates.push(this.snakeTailTipCoordinates)
+        copyOfSnakeBodyCoordinates.shift()
       }
+
+      this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.labeledMatrix)
     }
   },
 
@@ -221,7 +222,9 @@ export default Vue.extend({
   },
 
   beforeMount () {
-    this.generateMatrix(30)
+    this.labeledMatrix = fillLabelledMatrix(this.MATRIX_LENGTH)
+
+    this.generateMatrix(this.MATRIX_LENGTH)
 
     window.addEventListener('keydown', (event) => {
       this.checkForDirectionChange(event)
