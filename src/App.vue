@@ -148,8 +148,6 @@ export default Vue.extend({
       if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
         this.generateRandomApplePoint()
         this.matrix[this.appleCoordinates.y][this.appleCoordinates.x] = '&#9641;'
-        // ToDo: create counter for how many apples have been eaten
-        this.applesEatenCounter++
         this.isAppleEaten = false
       }
 
@@ -167,7 +165,9 @@ export default Vue.extend({
       if (head.x === this.appleCoordinates.x && head.y === this.appleCoordinates.y) {
         this.snakeBodyCoordinates.unshift(this.appleCoordinates)
         this.isAppleEaten = true
+        this.applesEatenCounter++
         this.snakeBodyLength++
+        // ToDO if applesEatenCounter === matrix * matrix - 3 => YOU WON
       }
       this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       this.updateMatrix()
