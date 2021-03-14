@@ -3,7 +3,10 @@
     id="app"
     class="center"
   >
-    <div
+
+    <canvas id="canvas" class="mt-5"></canvas>
+
+    <!-- <div
       v-for="(row, i) in matrix"
       :key="i"
     >
@@ -27,7 +30,7 @@
           class="matrix-entry-size"
         />
       </span>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -35,10 +38,14 @@
 import { Vue } from 'vue-property-decorator'
 import {
   randomBetweenMinMax,
-  getFilledArrayWithSymbols,
   fillLabelledMatrix,
   randomApplePointFromMatrix
 } from './utils/index'
+
+enum DrawType {
+  STOKE,
+  FILL
+}
 
 enum Direction {
   LEFT,
@@ -53,7 +60,8 @@ type Coordinates = {
 }
 
 type GameState = {
-  MATRIX_LENGTH: number;
+  CANVAS_SIZE: number | null;
+  MATRIX_LENGTH: number | null;
   matrix: string[][];
   labeledMatrix: {}[][];
   snakeBodyCoordinates: Coordinates[];
@@ -68,7 +76,8 @@ type GameState = {
 export default Vue.extend({
   data (): GameState {
     return {
-      MATRIX_LENGTH: 30,
+      CANVAS_SIZE: null,
+      MATRIX_LENGTH: null,
       matrix: [],
       labeledMatrix: [],
       snakeBodyCoordinates: [],
@@ -86,12 +95,22 @@ export default Vue.extend({
       if (size < 20) throw new Error('Size should be at least 20 x 20.')
       if (size % 2 !== 0) throw new Error('Size should be an even number')
 
-      for (let i = 0; i < size; i++) {
-        this.matrix[i] = getFilledArrayWithSymbols(size)
-      }
-
       this.generateInitialSnakePosition(size)
       this.generateRandomApplePoint()
+
+      const canvas = document.getElementById('canvas')
+      const drawingContext = canvas.getContext('2d')
+
+      drawingContext.canvas.width = drawingContext.canvas.height = this.CANVAS_SIZE
+
+      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
+
+      for (let i = 0; i < this.CANVAS_SIZE; i += rectSide) {
+        for (let j = 0; j < this.CANVAS_SIZE; j += rectSide) {
+          this.draw(i, j, 'rgb(0, 0, 0)', DrawType.STOKE)
+        }
+      }
+
       this.updateMatrix()
     },
 
@@ -135,23 +154,25 @@ export default Vue.extend({
     },
 
     updateMatrix (): void {
-      if (this.snakeTailTipCoordinates !== null) {
-        const lastBodyIndexCoordinateX = this.snakeTailTipCoordinates.x
-        const lastBodyIndexCoordinateY = this.snakeTailTipCoordinates.y
-        this.matrix[lastBodyIndexCoordinateY][lastBodyIndexCoordinateX] = '&nbsp;&blk14;&blk14;&nbsp;'
-      }
+      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
 
       this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
-        this.matrix[y][x] = '&squf;'
+        this.draw(x * rectSide, y * rectSide, 'rgb(0, 0, 0)', DrawType.FILL)
       })
+
+      if (this.snakeTailTipCoordinates !== null) {
+        const x = this.snakeTailTipCoordinates.x * rectSide
+        const y = this.snakeTailTipCoordinates.y * rectSide
+        this.draw(x, y, 'rgb(255, 255, 255)', DrawType.FILL)
+        this.draw(x, y, 'rgb(0, 0, 0)', DrawType.STOKE)
+      }
 
       if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
         this.generateRandomApplePoint()
-        this.matrix[this.appleCoordinates.y][this.appleCoordinates.x] = '&#9641;'
+        this.draw(this.appleCoordinates.x * rectSide, this.appleCoordinates.y * rectSide, 'rgb(255, 0, 0)', DrawType.FILL)
         this.isAppleEaten = false
+        // ToDO if applesEatenCounter === matrix * matrix - 3 => YOU WON
       }
-
-      this.matrix = this.matrix.slice()
     },
 
     addToSnakeBody (x: number, y: number): void {
@@ -165,9 +186,8 @@ export default Vue.extend({
       if (head.x === this.appleCoordinates.x && head.y === this.appleCoordinates.y) {
         this.snakeBodyCoordinates.unshift(this.appleCoordinates)
         this.isAppleEaten = true
-        this.applesEatenCounter++
         this.snakeBodyLength++
-        // ToDO if applesEatenCounter === matrix * matrix - 3 => YOU WON
+        this.applesEatenCounter++
       }
       this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       this.updateMatrix()
@@ -187,8 +207,8 @@ export default Vue.extend({
     },
 
     checkSnakeWrap (headIndex: number): number {
-      if (headIndex > this.matrix.length - 1) return 0
-      if (headIndex < 0) return this.matrix.length - 1
+      if (headIndex > this.MATRIX_LENGTH - 1) return 0
+      if (headIndex < 0) return this.MATRIX_LENGTH - 1
       return headIndex
     },
 
@@ -212,20 +232,33 @@ export default Vue.extend({
       }
 
       this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.labeledMatrix)
+    },
+
+    draw (x: number, y: number, color: string, type: DrawType): void {
+      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
+      const canvas = document.getElementById('canvas')
+      const drawingContext = canvas.getContext('2d')
+
+      drawingContext.fillStyle = color
+
+      type === DrawType.STOKE
+        ? drawingContext.strokeRect(x, y, rectSide, rectSide)
+        : drawingContext.fillRect(x, y, rectSide, rectSide)
     }
   },
 
   mounted () {
-    setInterval(() => {
-      this.updateSnakeCoordinates()
-    }, 100)
-  },
-
-  beforeMount () {
+    this.CANVAS_SIZE = 500
+    this.MATRIX_LENGTH = 20
     this.labeledMatrix = fillLabelledMatrix(this.MATRIX_LENGTH)
 
     this.generateMatrix(this.MATRIX_LENGTH)
+    setInterval(() => {
+      this.updateSnakeCoordinates()
+    }, 500)
+  },
 
+  beforeMount () {
     window.addEventListener('keydown', (event) => {
       this.checkForDirectionChange(event)
     })
@@ -252,5 +285,9 @@ export default Vue.extend({
   .scaled-food {
     color: #ff0000;
     transform: scale(1.7) translate(0.2px, 1.5px);
+  }
+
+  .mt-5 {
+    margin-top: 5rem;
   }
 </style>
