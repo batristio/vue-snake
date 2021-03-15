@@ -21,6 +21,7 @@ const randomBetweenMinMax = function (min: number, max: number): number {
 }
 
 const randomApplePointFromMatrix = function (snakeBodyCoordinate: Coordinates[], labeledMatrix: {}[][]): {} {
+  // ToDo: that's not creating a new array from
   snakeBodyCoordinate.forEach(it => function () {
     labeledMatrix[it.y].splice(it.x, 1)
   })
