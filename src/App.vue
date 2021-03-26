@@ -13,7 +13,7 @@ import {
 } from './utils/index'
 
 enum DrawType {
-  STOKE,
+  OUTLINE,
   FILL
 }
 
@@ -40,6 +40,9 @@ type GameState = {
   appleCoordinates: Coordinates | null;
   isAppleEaten: boolean;
   applesEatenCounter: number;
+  canvas: Record <string, any> | null;
+  drawingContext: Record <string, any> | null;
+  rectSide: number | null;
 }
 
 export default Vue.extend({
@@ -54,7 +57,10 @@ export default Vue.extend({
       direction: null,
       appleCoordinates: null,
       isAppleEaten: false,
-      applesEatenCounter: 0
+      applesEatenCounter: 0,
+      canvas: null,
+      drawingContext: null,
+      rectSide: null
     }
   },
 
@@ -63,19 +69,14 @@ export default Vue.extend({
       if (this.MATRIX_LENGTH < 20) throw new Error('Size should be at least 20 x 20.')
       if (this.MATRIX_LENGTH % 2 !== 0) throw new Error('Size should be an even number')
 
+      this.initializeCanvas()
+
       this.generateInitialSnakePosition(this.MATRIX_LENGTH)
       this.generateRandomApplePoint()
 
-      const canvas = document.getElementById('canvas')
-      const drawingContext = canvas.getContext('2d')
-
-      drawingContext.canvas.width = drawingContext.canvas.height = this.CANVAS_SIZE
-
-      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
-
-      for (let i = 0; i < this.CANVAS_SIZE; i += rectSide) {
-        for (let j = 0; j < this.CANVAS_SIZE; j += rectSide) {
-          this.draw(i, j, 'rgb(0, 0, 0)', DrawType.STOKE)
+      for (let i = 0; i < this.CANVAS_SIZE; i += this.rectSide) {
+        for (let j = 0; j < this.CANVAS_SIZE; j += this.rectSide) {
+          this.draw(i, j, 'rgb(0, 0, 0)', DrawType.OUTLINE)
         }
       }
 
@@ -122,22 +123,21 @@ export default Vue.extend({
     },
 
     redrawChanges (): void {
-      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
-
       this.snakeBodyCoordinates.forEach(({ x, y }: Coordinates) => {
-        this.draw(x * rectSide, y * rectSide, 'rgb(0, 0, 0)', DrawType.FILL)
+        this.draw(x * this.rectSide, y * this.rectSide, 'rgb(0, 0, 0)', DrawType.FILL)
       })
 
       if (this.snakeTailTipCoordinates !== null) {
-        const x = this.snakeTailTipCoordinates.x * rectSide
-        const y = this.snakeTailTipCoordinates.y * rectSide
+        const x = this.snakeTailTipCoordinates.x * this.rectSide
+        const y = this.snakeTailTipCoordinates.y * this.rectSide
         this.draw(x, y, 'rgb(255, 255, 255)', DrawType.FILL)
-        this.draw(x, y, 'rgb(0, 0, 0)', DrawType.STOKE)
+        this.draw(x, y, 'rgb(0, 0, 0)', DrawType.OUTLINE)
       }
 
       if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
         this.generateRandomApplePoint()
-        this.draw(this.appleCoordinates.x * rectSide, this.appleCoordinates.y * rectSide, 'rgb(255, 0, 0)', DrawType.FILL)
+        this.draw(this.appleCoordinates.x * this.rectSide, this.appleCoordinates.y * this.rectSide, 'rgb(255, 0, 0)', DrawType.FILL)
+        this.draw(this.appleCoordinates.x * this.rectSide, this.appleCoordinates.y * this.rectSide, 'rgb(0, 0, 0)', DrawType.OUTLINE)
         this.isAppleEaten = false
         this.applesEatenCounter++
         // ToDO if applesEatenCounter === matrix * matrix - 3 => YOU WON
@@ -203,16 +203,21 @@ export default Vue.extend({
       this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.labeledMatrix)
     },
 
+    initializeCanvas (): void {
+      this.canvas = document.getElementById('canvas')
+      this.drawingContext = this.canvas.getContext('2d')
+
+      this.drawingContext.canvas.width = this.drawingContext.canvas.height = this.CANVAS_SIZE
+
+      this.rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
+    },
+
     draw (x: number, y: number, color: string, type: DrawType): void {
-      const rectSide = this.CANVAS_SIZE / this.MATRIX_LENGTH
-      const canvas = document.getElementById('canvas')
-      const drawingContext = canvas.getContext('2d')
+      this.drawingContext.fillStyle = color
 
-      drawingContext.fillStyle = color
-
-      type === DrawType.STOKE
-        ? drawingContext.strokeRect(x, y, rectSide, rectSide)
-        : drawingContext.fillRect(x, y, rectSide, rectSide)
+      type === DrawType.OUTLINE
+        ? this.drawingContext.strokeRect(x, y, this.rectSide, this.rectSide)
+        : this.drawingContext.fillRect(x, y, this.rectSide, this.rectSide)
     }
   },
 
