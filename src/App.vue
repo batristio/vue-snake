@@ -1,14 +1,13 @@
 <template>
   <div id="app" class="center">
-    <canvas id="canvas" class="mt-5"></canvas>
+    <canvas id="canvas" class="mt-5 border-2"></canvas>
   </div>
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-property-decorator'
+import { defineComponent } from 'vue'
 import {
   randomBetweenMinMax,
-  fillLabelledMatrix,
   randomApplePointFromMatrix
 } from './utils/index'
 
@@ -30,37 +29,35 @@ type Coordinates = {
 }
 
 type GameState = {
-  CANVAS_SIZE: number | null;
-  MATRIX_LENGTH: number | null;
-  labeledMatrix: {}[][];
+  CANVAS_SIZE: number;
+  MATRIX_LENGTH: number;
   snakeBodyCoordinates: Coordinates[];
   snakeTailTipCoordinates: Coordinates | null;
   snakeBodyLength: number;
-  direction: Direction | null;
-  appleCoordinates: Coordinates | null;
+  direction: Direction;
+  appleCoordinates: Coordinates;
   isAppleEaten: boolean;
   applesEatenCounter: number;
-  canvas: Record <string, any> | null;
-  drawingContext: Record <string, any> | null;
-  rectSide: number | null;
+  canvas: HTMLElement | null;
+  drawingContext: Record <string, any>;
+  rectSide: number;
 }
 
-export default Vue.extend({
+export default defineComponent({
   data (): GameState {
     return {
-      CANVAS_SIZE: null,
-      MATRIX_LENGTH: null,
-      labeledMatrix: [],
+      CANVAS_SIZE: 0,
+      MATRIX_LENGTH: 0,
       snakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
-      direction: null,
-      appleCoordinates: null,
+      direction: Direction.LEFT,
+      appleCoordinates: { x: 0, y: 0 },
       isAppleEaten: false,
       applesEatenCounter: 0,
       canvas: null,
-      drawingContext: null,
-      rectSide: null
+      drawingContext: {},
+      rectSide: 0
     }
   },
 
@@ -73,12 +70,6 @@ export default Vue.extend({
 
       this.generateInitialSnakePosition(this.MATRIX_LENGTH)
       this.generateRandomApplePoint()
-
-      for (let i = 0; i < this.CANVAS_SIZE; i += this.rectSide) {
-        for (let j = 0; j < this.CANVAS_SIZE; j += this.rectSide) {
-          this.draw(i, j, 'rgb(0, 0, 0)', DrawType.OUTLINE)
-        }
-      }
 
       this.redrawChanges()
     },
@@ -131,13 +122,11 @@ export default Vue.extend({
         const x = this.snakeTailTipCoordinates.x * this.rectSide
         const y = this.snakeTailTipCoordinates.y * this.rectSide
         this.draw(x, y, 'rgb(255, 255, 255)', DrawType.FILL)
-        this.draw(x, y, 'rgb(0, 0, 0)', DrawType.OUTLINE)
       }
 
       if (this.isAppleEaten === true || this.applesEatenCounter === 0) {
         this.generateRandomApplePoint()
         this.draw(this.appleCoordinates.x * this.rectSide, this.appleCoordinates.y * this.rectSide, 'rgb(255, 0, 0)', DrawType.FILL)
-        this.draw(this.appleCoordinates.x * this.rectSide, this.appleCoordinates.y * this.rectSide, 'rgb(0, 0, 0)', DrawType.OUTLINE)
         this.isAppleEaten = false
         this.applesEatenCounter++
         // ToDO if applesEatenCounter === matrix * matrix - 3 => YOU WON
@@ -193,14 +182,14 @@ export default Vue.extend({
     },
 
     generateRandomApplePoint (): void {
-      const copyOfSnakeBodyCoordinates: Coordinates[] = this.snakeBodyCoordinates
+      const copyOfSnakeBodyCoordinates: Coordinates[] = this.snakeBodyCoordinates.slice()
 
       if (this.snakeTailTipCoordinates !== null) {
         copyOfSnakeBodyCoordinates.push(this.snakeTailTipCoordinates)
         copyOfSnakeBodyCoordinates.shift()
       }
 
-      this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.labeledMatrix)
+      this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.MATRIX_LENGTH)
     },
 
     initializeCanvas (): void {
@@ -224,7 +213,6 @@ export default Vue.extend({
   mounted () {
     this.CANVAS_SIZE = 500
     this.MATRIX_LENGTH = 20
-    this.labeledMatrix = fillLabelledMatrix(this.MATRIX_LENGTH)
 
     this.init()
 
@@ -246,23 +234,11 @@ export default Vue.extend({
     text-align: center;
   }
 
-  .matrix-entry-size {
-    display: inline-block;
-    height:30.67px;
-    width:30.67px;
-    transform: scale(1,1.2)
-  }
-
-  .scaled-snake-body-piece {
-    transform: scale(5.5) translate(0.1px, 5px);
-  }
-
-  .scaled-food {
-    color: #ff0000;
-    transform: scale(1.7) translate(0.2px, 1.5px);
-  }
-
   .mt-5 {
     margin-top: 5rem;
+  }
+
+  .border-2 {
+    border: 2px solid black;
   }
 </style>

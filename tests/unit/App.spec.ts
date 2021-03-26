@@ -8,6 +8,5 @@ describe('App.vue', () => {
 
     /* Fix the error */
     // expect(vm.matrix).toBe(0)
-    
   })
 })

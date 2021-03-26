@@ -10,6 +10,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    // skipLibCheck to remove the warnings of type: 
+    // Type 'Function & T[key]["get"]' does not satisfy the constraint...
+    // Taken from here: https://github.com/vuejs/vue-next/issues/1261
+    "skipLibCheck": true,
     "baseUrl": ".",
     "types": [
       "webpack-env",
