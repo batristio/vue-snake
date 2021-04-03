@@ -20,28 +20,24 @@ const randomBetweenMinMax = function (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min) + min)
 }
 
-// ToDo: create unique function
-// const unique = function (a) {
-//   const seen = {}
-//   const out = []
-//   const len = a.length
-//   let j = 0
+const uniqueBody = function (array: Coordinates[]) {
+  const seen = {}
+  const out = []
+  let j = 0
 
-//   for (let i = 0; i < len; i++) {
-//     const item: number = a[i]
-//     if (seen[item] !== 1) {
-//       seen[item] = 1
-//       out[j++] = item
-//     }
-//   }
-//   return out
-// }
+  for (let i = 0; i < array.length; i++) {
+    const item = [array[i].x, array[i].y]
+    if (seen[item] !== 1) {
+      seen[item] = 1
+      out[j++] = array[i]
+    }
+  }
+  return out
+}
 
-const randomApplePointFromMatrix = function (snakeBodyCoordinate: Coordinates[], matrixLength: number): {} {
+const randomApplePointFromMatrix = function (uniqueSnakeBody: Coordinates[], matrixLength: number): {} {
+  const startTime = performance.now()
   const copyOfLabelledMatrix = createCoordinatesMatrix(matrixLength)
-
-  // ToDo: this does not work because we've got objects
-  const uniqueSnakeBody = [...new Set(snakeBodyCoordinate)]
 
   uniqueSnakeBody.map(it => {
     copyOfLabelledMatrix[it.y].splice(it.x, 1)
@@ -55,5 +51,6 @@ const randomApplePointFromMatrix = function (snakeBodyCoordinate: Coordinates[],
 
 export {
   randomBetweenMinMax,
-  randomApplePointFromMatrix
+  randomApplePointFromMatrix,
+  uniqueBody
 }

@@ -1,5 +1,7 @@
 <template>
   <div id="app" class="center">
+    <p>Snake body length: {{ snakeBodyCoordinates.length }}</p>
+    <p>Unique body length: {{ uniqueSnakeBodyCoordinates.length }}</p>
     <canvas id="canvas" class="mt-5 border-2"></canvas>
   </div>
 </template>
@@ -8,7 +10,8 @@
 import { defineComponent } from 'vue'
 import {
   randomBetweenMinMax,
-  randomApplePointFromMatrix
+  randomApplePointFromMatrix,
+  uniqueBody
 } from './utils/index'
 
 enum DrawType {
@@ -32,6 +35,7 @@ type GameState = {
   CANVAS_SIZE: number;
   MATRIX_LENGTH: number;
   snakeBodyCoordinates: Coordinates[];
+  uniqueSnakeBodyCoordinates: Coordinates[];
   snakeTailTipCoordinates: Coordinates | null;
   snakeBodyLength: number;
   direction: Direction;
@@ -49,6 +53,7 @@ export default defineComponent({
       CANVAS_SIZE: 0,
       MATRIX_LENGTH: 0,
       snakeBodyCoordinates: [],
+      uniqueSnakeBodyCoordinates: [],
       snakeTailTipCoordinates: null,
       snakeBodyLength: 0,
       direction: Direction.LEFT,
@@ -148,6 +153,7 @@ export default defineComponent({
       } else {
         this.snakeTailTipCoordinates = this.snakeBodyCoordinates.pop()
       }
+      this.uniqueSnakeBodyCoordinates = uniqueBody(this.snakeBodyCoordinates)
       this.redrawChanges()
     },
 
@@ -171,10 +177,10 @@ export default defineComponent({
     },
 
     checkForDirectionChange (event: KeyboardEvent): void {
-      if (event.keyCode === 37 && this.direction !== Direction.RIGHT) this.changeDirection(Direction.LEFT)
-      if (event.keyCode === 38 && this.direction !== Direction.DOWN) this.changeDirection(Direction.UP)
-      if (event.keyCode === 39 && this.direction !== Direction.LEFT) this.changeDirection(Direction.RIGHT)
-      if (event.keyCode === 40 && this.direction !== Direction.UP) this.changeDirection(Direction.DOWN)
+      if (event.key === 'ArrowUp' && this.direction !== Direction.DOWN) this.changeDirection(Direction.UP)
+      if (event.key === 'ArrowDown' && this.direction !== Direction.UP) this.changeDirection(Direction.DOWN)
+      if (event.key === 'ArrowLeft' && this.direction !== Direction.RIGHT) this.changeDirection(Direction.LEFT)
+      if (event.key === 'ArrowRight' && this.direction !== Direction.LEFT) this.changeDirection(Direction.RIGHT)
     },
 
     changeDirection (newDirection: Direction): void {
@@ -188,7 +194,6 @@ export default defineComponent({
         copyOfSnakeBodyCoordinates.push(this.snakeTailTipCoordinates)
         copyOfSnakeBodyCoordinates.shift()
       }
-
       this.appleCoordinates = randomApplePointFromMatrix(copyOfSnakeBodyCoordinates, this.MATRIX_LENGTH)
     },
 
@@ -218,7 +223,7 @@ export default defineComponent({
 
     setInterval(() => {
       this.updateSnakeCoordinates()
-    }, 300)
+    }, 100)
   },
 
   beforeMount () {
